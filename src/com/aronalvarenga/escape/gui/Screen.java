@@ -79,5 +79,9 @@ public class Screen extends Bitmap {
 				draw(msg, (width - msg.length() * 6) / 2, height / 3 + 4, 0xffffff);
 			}
 		}
+
+		if (game.menu != null) {
+			game.menu.render(this);
+		}
 	}
 }

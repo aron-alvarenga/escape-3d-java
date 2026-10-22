@@ -15,9 +15,7 @@ public class Game {
 	public Menu menu;
 
 	public Game() {
-		//setMenu(new TitleMenu());
-		
-		this.newGame();
+		setMenu(new MainMenu());
 	}
 
 	public void newGame() {
@@ -48,6 +46,23 @@ public class Game {
 	}
 
 	public void tick(boolean[] keys) {
+		// Quando um menu está aberto, processar apenas o menu
+		if (menu != null) {
+			boolean up = keys[KeyEvent.VK_W] || keys[KeyEvent.VK_UP] || keys[KeyEvent.VK_NUMPAD8];
+			boolean down = keys[KeyEvent.VK_S] || keys[KeyEvent.VK_DOWN] || keys[KeyEvent.VK_NUMPAD2];
+			boolean left = keys[KeyEvent.VK_A];
+			boolean right = keys[KeyEvent.VK_D];
+			boolean use = keys[KeyEvent.VK_SPACE] || keys[KeyEvent.VK_ENTER];
+			keys[KeyEvent.VK_W] = keys[KeyEvent.VK_UP] = keys[KeyEvent.VK_NUMPAD8] = false;
+			keys[KeyEvent.VK_S] = keys[KeyEvent.VK_DOWN] = keys[KeyEvent.VK_NUMPAD2] = false;
+			keys[KeyEvent.VK_A] = false;
+			keys[KeyEvent.VK_D] = false;
+			keys[KeyEvent.VK_SPACE] = false;
+			keys[KeyEvent.VK_ENTER] = false;
+			menu.tick(this, up, down, left, right, use);
+			return;
+		}
+
 		if (pauseTime > 0) {
 			pauseTime--;
 			return;
@@ -80,43 +95,32 @@ public class Game {
 
 		if (keys[KeyEvent.VK_ESCAPE]) {
 			keys[KeyEvent.VK_ESCAPE] = false;
-			if (menu == null) {
-				//setMenu(new PauseMenu());
-			}
+			setMenu(new PauseMenu());
+		}
+
+		if (keys[KeyEvent.VK_P]) {
+			keys[KeyEvent.VK_P] = false;
+			setMenu(new PauseMenu());
 		}
 
 		if (use) {
 			keys[KeyEvent.VK_SPACE] = false;
 		}
 
-		if (menu != null) {
-			keys[KeyEvent.VK_W] = keys[KeyEvent.VK_UP] = keys[KeyEvent.VK_NUMPAD8] = false;
-			keys[KeyEvent.VK_S] = keys[KeyEvent.VK_DOWN] = keys[KeyEvent.VK_NUMPAD2] = false;
-			keys[KeyEvent.VK_A] = false;
-			keys[KeyEvent.VK_D] = false;
-
-			menu.tick(this, up, down, left, right, use);
-		} else {
-			player.tick(up, down, left, right, turnLeft, turnRight);
-			if (use) {
-				player.activate();
-			}
-
-			level.tick();
+		player.tick(up, down, left, right, turnLeft, turnRight);
+		if (use) {
+			player.activate();
 		}
-		
-		if(keys[KeyEvent.VK_Z]) {
+
+		level.tick();
+
+		if (keys[KeyEvent.VK_Z]) {
 			player.attack = true;
-
 		}
-		
-		
-		if(player.health <= 0) {
+
+		if (player.health <= 0) {
 			this.newGame();
 		}
-		
-		
-		
 	}
 
 	public void getLoot(Item item) {
@@ -132,6 +136,13 @@ public class Game {
 	}
 
 	public void lose(Player player) {
-		
+
+	}
+
+	public void resetToMainMenu() {
+		Level.clear();
+		level = null;
+		player = null;
+		setMenu(new MainMenu());
 	}
 }

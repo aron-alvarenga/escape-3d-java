@@ -54,19 +54,22 @@ public class EscapeComponent extends Canvas implements Runnable {
 		addFocusListener(inputHandler);
 		addMouseListener(inputHandler);
 		addMouseMotionListener(inputHandler);
-		emptyCursor = Toolkit.getDefaultToolkit().createCustomCursor(new BufferedImage(16, 16, BufferedImage.TYPE_INT_ARGB), new Point(0, 0), "empty");
+		emptyCursor = Toolkit.getDefaultToolkit()
+				.createCustomCursor(new BufferedImage(16, 16, BufferedImage.TYPE_INT_ARGB), new Point(0, 0), "empty");
 		defaultCursor = getCursor();
 	}
 
 	public synchronized void start() {
-		if (running) return;
+		if (running)
+			return;
 		running = true;
 		thread = new Thread(this);
 		thread.start();
 	}
 
 	public synchronized void stop() {
-		if (!running) return;
+		if (!running)
+			return;
 		running = false;
 		try {
 			thread.join();
@@ -75,22 +78,27 @@ public class EscapeComponent extends Canvas implements Runnable {
 		}
 	}
 
-	public void run() {
-		int frames = 0;
+	private int fps;
 
-		double unprocessedSeconds = 0;
+	public void run() {
+		requestFocus();
+
 		long lastTime = System.nanoTime();
 		double secondsPerTick = 1 / 60.0;
-		int tickCount = 0;
+		double unprocessedSeconds = 0;
 
-		requestFocus();
+		int frames = 0;
+		long lastTimer = System.currentTimeMillis();
 
 		while (running) {
 			long now = System.nanoTime();
 			long passedTime = now - lastTime;
 			lastTime = now;
-			if (passedTime < 0) passedTime = 0;
-			if (passedTime > 100000000) passedTime = 100000000;
+
+			if (passedTime < 0)
+				passedTime = 0;
+			if (passedTime > 100000000)
+				passedTime = 100000000; // Cap at 0.1s to avoid massive catching up
 
 			unprocessedSeconds += passedTime / 1000000000.0;
 
@@ -99,26 +107,25 @@ public class EscapeComponent extends Canvas implements Runnable {
 				tick();
 				unprocessedSeconds -= secondsPerTick;
 				ticked = true;
-
-				tickCount++;
-				if (tickCount % 60 == 0) {
-					System.out.println(frames + " fps");
-					lastTime += 1000;
-					frames = 0;
-				}
 			}
 
-			if (ticked) {
-				render();
-				frames++;
-			} else {
+			render();
+			frames++;
+
+			if (System.currentTimeMillis() - lastTimer > 1000) {
+				lastTimer += 1000;
+				fps = frames;
+				frames = 0;
+			}
+
+			// Don't burn CPU if we are running too fast
+			if (!ticked) {
 				try {
 					Thread.sleep(1);
 				} catch (InterruptedException e) {
 					e.printStackTrace();
 				}
 			}
-
 		}
 	}
 
@@ -149,22 +156,35 @@ public class EscapeComponent extends Canvas implements Runnable {
 		g.setColor(Color.green);
 		g.fillRect(0, 0, getWidth(), getHeight());
 		g.drawImage(img, 0, 0, WIDTH * SCALE, HEIGHT * SCALE, null);
-		
-		//Barra de vida
-		
-		
-		g.setColor(Color.red);
-		g.fillRect(10, 10, 250 , 20);
-		
-		
-		g.setColor(Color.green);
-		g.fillRect(10, 10, (int)( (Player.health/20) * 250) , 20);
-		
-		g.setColor(Color.black);
-		g.setFont(new Font("Arial",Font.BOLD,25));
-		g.drawString("Vida: " + (int)(Player.health),530,20);
-		
-		
+
+		// Menus desenhados com Graphics (fonte do sistema garantida)
+		if (game.menu != null) {
+			game.menu.renderWithGraphics(g, getWidth(), getHeight());
+		}
+
+		// UI Elements
+		if (game.menu == null && game.player != null) {
+			// Life bar shadow
+			g.setColor(new Color(0, 0, 0, 100));
+			g.fillRect(12, 12, 250, 20);
+
+			// Life bar
+			g.setColor(Color.red);
+			g.fillRect(10, 10, 250, 20);
+			g.setColor(new Color(0, 255, 0, 200));
+			g.fillRect(10, 10, (int) ((Player.health / 20.0) * 250), 20);
+
+			// Life text
+			g.setColor(Color.white);
+			g.setFont(new Font("Arial", Font.BOLD, 16));
+			g.drawString("Vida: " + (int) (Player.health), 20, 26);
+		}
+
+		// FPS Display
+		g.setFont(new Font("Arial", Font.PLAIN, 12));
+		g.setColor(Color.yellow);
+		g.drawString(fps + " FPS", getWidth() - 50, 20);
+
 		g.dispose();
 		bs.show();
 	}
@@ -177,12 +197,12 @@ public class EscapeComponent extends Canvas implements Runnable {
 		frame.add(game);
 		frame.setResizable(false);
 		frame.pack();
-		
+
 		frame.setLocationRelativeTo(null);
 
-	
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.setVisible(true);
+		game.requestFocusInWindow();
 
 		game.start();
 	}

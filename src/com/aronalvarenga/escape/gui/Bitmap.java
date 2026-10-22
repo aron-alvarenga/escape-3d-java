@@ -59,8 +59,8 @@ public class Bitmap {
 				if (xPix < 0 || xPix >= width) continue;
 
 				int src = bitmap.pixels[(x + xo) + (y + yo) * bitmap.width];
-				if (src >= 0) {
-					pixels[xPix + yPix * width] = src * col;
+				if ((src & 0xffffff) != 0) {
+					pixels[xPix + yPix * width] = col;
 				}
 			}
 		}
@@ -76,8 +76,8 @@ public class Bitmap {
 				if (xPix < 0 || xPix >= width) continue;
 
 				int src = bitmap.pixels[(x / scale + xo) + (y / scale + yo) * bitmap.width];
-				if (src >= 0) {
-					pixels[xPix + yPix * width] = src * col;
+				if ((src & 0xffffff) != 0) {
+					pixels[xPix + yPix * width] = col;
 				}
 			}
 		}
